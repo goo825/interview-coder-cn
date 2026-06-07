@@ -3,6 +3,17 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
+import { copyFileSync } from 'fs'
+
+const copyPromptsPlugin = () => ({
+  name: 'copy-prompts',
+  writeBundle() {
+    copyFileSync(
+      resolve(process.cwd(), 'src/main/prompts.md'),
+      resolve(process.cwd(), 'out/main/prompts.md')
+    )
+  }
+})
 
 export default defineConfig({
   main: {
@@ -15,7 +26,8 @@ export default defineConfig({
             dest: '.'
           }
         ]
-      })
+      }),
+      copyPromptsPlugin()
     ]
   },
   preload: {

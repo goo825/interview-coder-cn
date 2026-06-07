@@ -4,7 +4,12 @@ import type { ModelMessage } from 'ai'
 import { applyContentProtection } from './main-window'
 import { takeScreenshot } from './take-screenshot'
 import { saveScreenshotToDisk } from './save-screenshot'
-import { getSolutionStream, getFollowUpStream, getGeneralStream } from './ai'
+import {
+  getSolutionStream,
+  getFollowUpStream,
+  getGeneralStream,
+  getTranscriptionAnswerStream
+} from './ai'
 import { state } from './state'
 import { settings } from './settings'
 import { getTranscriptionText, clearTranscriptionText } from './transcription'
@@ -483,6 +488,105 @@ const callbacks: Record<string, () => void> = {
   // Stop current AI solution stream
   stopSolutionStream: () => {
     abortCurrentStream('user')
+  },
+
+  answerTranscription: async () => {
+    const mainWindow = global.mainWindow
+    if (!mainWindow || mainWindow.isDestroyed() || !state.inCoderPage || !settings.apiKey) return
+
+    const transcriptionText = getTranscriptionText().trim()
+    if (!transcriptionText) {
+      mainWindow.webContents.send('solution-error', '当前没有可回答的语音转录内容')
+      return
+    }
+
+    abortCurrentStream('new-request')
+    const streamContext: StreamContext = {
+      controller: new AbortController(),
+      reason: null
+    }
+    currentStreamContext = streamContext
+
+    conversationMessages = [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: `这是语音转录内容：\n${transcriptionText}`
+          }
+        ]
+      }
+    ]
+    recentScreenshots = []
+    hasAppendSeparator = false
+
+    mainWindow.webContents.send('solution-clear')
+    mainWindow.webContents.send('screenshots-updated', recentScreenshots)
+    mainWindow.webContents.send('ai-loading-start')
+
+    let endedNaturally = true
+    let streamStarted = false
+    let assistantResponse = ''
+    try {
+      const answerStream = getTranscriptionAnswerStream(
+        transcriptionText,
+        streamContext.controller.signal
+      )
+      streamStarted = true
+      try {
+        for await (const chunk of answerStream) {
+          if (streamContext.controller.signal.aborted) {
+            endedNaturally = false
+            break
+          }
+          assistantResponse += chunk
+          mainWindow.webContents.send('solution-chunk', chunk)
+        }
+      } catch (error) {
+        if (!streamContext.controller.signal.aborted) {
+          endedNaturally = false
+          console.error('Error streaming transcription answer:', error)
+          mainWindow.webContents.send('solution-error', extractErrorMessage(error))
+        } else {
+          endedNaturally = false
+        }
+      }
+
+      if (streamContext.controller.signal.aborted) {
+        if (streamContext.reason === 'user') {
+          mainWindow.webContents.send('solution-stopped')
+        }
+      } else if (endedNaturally) {
+        if (assistantResponse) {
+          conversationMessages.push({
+            role: 'assistant',
+            content: assistantResponse
+          })
+        }
+        mainWindow.webContents.send('solution-complete')
+      }
+    } catch (error) {
+      if (streamContext.controller.signal.aborted) {
+        if (streamContext.reason === 'user') {
+          mainWindow.webContents.send('solution-stopped')
+        }
+      } else {
+        endedNaturally = false
+        console.error('Error streaming transcription answer:', error)
+        mainWindow.webContents.send('solution-error', extractErrorMessage(error))
+      }
+    } finally {
+      if (currentStreamContext === streamContext) {
+        currentStreamContext = null
+      }
+      if (!streamStarted && streamContext.reason === 'user') {
+        mainWindow.webContents.send('solution-stopped')
+      }
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('ai-loading-end')
+      }
+    }
   },
 
   ignoreOrEnableMouse: () => {

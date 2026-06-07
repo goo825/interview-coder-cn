@@ -87,6 +87,12 @@ export function CustomShortcuts() {
             shortcut="stopSolutionStream"
           />
           <Shortcut
+            label="回答语音"
+            description="只根据当前语音转录内容生成回答，不需要截图"
+            shortcut="answerTranscription"
+            disabled={!dashscopeApiKey}
+          />
+          <Shortcut
             label="语音转录"
             description="开始/暂停实时语音转录"
             shortcut="toggleTranscription"
