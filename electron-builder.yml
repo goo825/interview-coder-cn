@@ -15,6 +15,9 @@ win:
   executableName: 解题助手
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
