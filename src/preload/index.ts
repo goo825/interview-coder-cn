@@ -138,6 +138,11 @@ const api = {
   // Select screenshot save directory
   selectScreenshotDir: () => ipcRenderer.invoke('selectScreenshotDir') as Promise<string | null>,
 
+  // Diagnostics
+  getLogFilePath: () => ipcRenderer.invoke('get-log-file-path') as Promise<string>,
+  logClientError: (scope: string, message: string) =>
+    ipcRenderer.invoke('log-client-error', { scope, message }),
+
   // Transcription
   startTranscription: (apiKey: string) => ipcRenderer.invoke('start-transcription', apiKey),
   stopTranscription: () => ipcRenderer.invoke('stop-transcription'),

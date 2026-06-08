@@ -1,5 +1,11 @@
 import 'dotenv/config'
 import { app, BrowserWindow, desktopCapturer, globalShortcut, session } from 'electron'
+import { electronApp, optimizer } from '@electron-toolkit/utils'
+import { logError, writeLog } from './logger'
+import './shortcuts'
+import './transcription'
+import { createWindow } from './main-window'
+import { initAutoUpdater } from './auto-updater'
 
 type AbortLikeError = {
   name?: string
@@ -19,18 +25,15 @@ function isAbortError(error: unknown): boolean {
 
 process.on('unhandledRejection', (error) => {
   if (isAbortError(error)) return
+  logError('main.unhandledRejection', error)
   console.error(error)
 })
 
 process.on('uncaughtException', (error) => {
   if (isAbortError(error)) return
+  logError('main.uncaughtException', error)
   console.error(error)
 })
-import { electronApp, optimizer } from '@electron-toolkit/utils'
-import './shortcuts'
-import './transcription'
-import { createWindow } from './main-window'
-import { initAutoUpdater } from './auto-updater'
 
 // Some Windows machines crash Electron's Chromium GPU process on launch
 // because of driver, remote desktop, or security software incompatibilities.
@@ -43,6 +46,8 @@ app.commandLine.appendSwitch('disable-gpu')
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  writeLog('app', `ready on ${process.platform} ${process.arch}`)
+
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 

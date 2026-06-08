@@ -60,7 +60,9 @@ export default function CoderPage() {
         } catch (err) {
           console.error('Failed to start transcription:', err)
           stopAudioCapture()
-          setErrorMessage('启动语音转录失败，请检查系统音频权限')
+          const message = err instanceof Error ? err.message : '启动语音转录失败，请检查系统音频权限'
+          const logFile = await window.api.getLogFilePath().catch(() => '')
+          setErrorMessage(logFile ? `${message}\n日志位置：${logFile}` : message)
         }
       }
     }
