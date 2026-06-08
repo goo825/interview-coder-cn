@@ -32,6 +32,13 @@ import './transcription'
 import { createWindow } from './main-window'
 import { initAutoUpdater } from './auto-updater'
 
+// Some Windows machines crash Electron's Chromium GPU process on launch
+// because of driver, remote desktop, or security software incompatibilities.
+// Disable hardware acceleration before app readiness so the UI can start
+// reliably on those machines.
+app.disableHardwareAcceleration()
+app.commandLine.appendSwitch('disable-gpu')
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
