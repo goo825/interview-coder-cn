@@ -37,6 +37,7 @@ export default function SettingsPage() {
   const [showApiKey, setShowApiKey] = useState(false)
   const [showDashscopeApiKey, setShowDashscopeApiKey] = useState(false)
   const [enableCustomPrompt, setEnableCustomPrompt] = useState(customPrompt.trim().length > 0)
+  const [apiConfigError, setApiConfigError] = useState('')
 
   useEffect(() => {
     return () => {
@@ -50,6 +51,28 @@ export default function SettingsPage() {
       // Clear the custom prompt when switch is turned off
       updateSetting('customPrompt', '')
     }
+  }
+
+  const handleApiBaseURLChange = (value: string) => {
+    updateSetting('apiBaseURL', value)
+    if (/^sk-[\w-]+/i.test(value.trim())) {
+      setApiConfigError('API Base URL 填成了 API Key。请把 sk- 开头的内容填到 API Key。')
+      return
+    }
+    if (value.trim() && !/^https?:\/\//i.test(value.trim())) {
+      setApiConfigError('API Base URL 必须是完整网址，例如 https://api.siliconflow.cn/v1。')
+      return
+    }
+    setApiConfigError('')
+  }
+
+  const handleApiKeyChange = (value: string) => {
+    updateSetting('apiKey', value)
+    if (/^https?:\/\//i.test(value.trim())) {
+      setApiConfigError('API Key 填成了 URL。请把网址填到 API Base URL。')
+      return
+    }
+    setApiConfigError('')
   }
 
   return (
@@ -86,11 +109,13 @@ export default function SettingsPage() {
               <input
                 type="text"
                 value={apiBaseURL}
-                onChange={(e) => updateSetting('apiBaseURL', e.target.value)}
+                onChange={(e) => handleApiBaseURLChange(e.target.value)}
                 className="w-60 px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="可为空，默认使用 OpenAI 的 API"
               />
             </div>
+
+            {apiConfigError && <div className="text-sm text-red-700">{apiConfigError}</div>}
 
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium">API Key</label>
@@ -98,7 +123,7 @@ export default function SettingsPage() {
                 <input
                   type={showApiKey ? 'text' : 'password'}
                   value={apiKey}
-                  onChange={(e) => updateSetting('apiKey', e.target.value)}
+                  onChange={(e) => handleApiKeyChange(e.target.value)}
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="输入 API Key"
                 />

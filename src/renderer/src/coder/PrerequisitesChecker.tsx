@@ -10,14 +10,31 @@ export function PrerequisitesChecker() {
   const [inputApiKey, setInputApiKey] = useState(apiKey)
   const [inputApiBaseURL, setInputApiBaseURL] = useState(apiBaseURL)
   const [showApiKey, setShowApiKey] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const saveApiKey = () => {
-    if (inputApiKey.trim()) {
-      updateSetting('apiKey', inputApiKey.trim())
+    const nextApiKey = inputApiKey.trim()
+    const nextApiBaseURL = inputApiBaseURL.trim()
+
+    if (/^sk-[\w-]+/i.test(nextApiBaseURL)) {
+      setErrorMessage('API Base URL 填成了 API Key。请把 sk- 开头的内容填到 API Key。')
+      return false
     }
-    if (inputApiBaseURL.trim()) {
-      updateSetting('apiBaseURL', inputApiBaseURL.trim())
+
+    if (/^https?:\/\//i.test(nextApiKey)) {
+      setErrorMessage('API Key 填成了 URL。请把网址填到 API Base URL。')
+      return false
     }
+
+    if (nextApiBaseURL && !/^https?:\/\//i.test(nextApiBaseURL)) {
+      setErrorMessage('API Base URL 必须是完整网址，例如 https://api.siliconflow.cn/v1。')
+      return false
+    }
+
+    setErrorMessage('')
+    updateSetting('apiKey', nextApiKey)
+    updateSetting('apiBaseURL', nextApiBaseURL)
+    return true
   }
 
   // If apiKey exists, skip this checker
@@ -62,9 +79,12 @@ export function PrerequisitesChecker() {
             <input
               type="text"
               value={inputApiBaseURL}
-              onChange={(e) => setInputApiBaseURL(e.target.value)}
+              onChange={(e) => {
+                setInputApiBaseURL(e.target.value)
+                setErrorMessage('')
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="https://api.openai.com/v1"
+              placeholder="https://api.siliconflow.cn/v1"
             />
           </div>
 
@@ -74,7 +94,10 @@ export function PrerequisitesChecker() {
               <input
                 type={showApiKey ? 'text' : 'password'}
                 value={inputApiKey}
-                onChange={(e) => setInputApiKey(e.target.value)}
+                onChange={(e) => {
+                  setInputApiKey(e.target.value)
+                  setErrorMessage('')
+                }}
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="请输入 API Key"
               />
@@ -88,6 +111,7 @@ export function PrerequisitesChecker() {
               </Button>
             </div>
           </div>
+          {errorMessage && <div className="text-sm text-red-600">{errorMessage}</div>}
         </div>
 
         <div className="flex gap-3">
@@ -97,8 +121,7 @@ export function PrerequisitesChecker() {
           <Button
             variant="outline"
             onClick={() => {
-              saveApiKey()
-              navigate('/settings')
+              if (saveApiKey()) navigate('/settings')
             }}
             className="flex-1"
           >

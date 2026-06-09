@@ -13,6 +13,38 @@ function getModel(_settings: AppSettings) {
   return _settings.model || fallbackModel
 }
 
+function getOpenAIClient() {
+  const apiBaseURL = settings.apiBaseURL.trim()
+  const apiKey = settings.apiKey.trim()
+
+  if (!apiKey) {
+    throw new Error('请先在设置里填写 API Key。')
+  }
+
+  if (/^sk-[\w-]+/i.test(apiBaseURL)) {
+    throw new Error(
+      'API Base URL 填成了 API Key。请把 Base URL 改成 https://api.siliconflow.cn/v1 或 https://api.openai.com/v1，把 sk- 开头的内容填到 API Key。'
+    )
+  }
+
+  if (/^https?:\/\//i.test(apiKey)) {
+    throw new Error('API Key 填成了 URL。请把 URL 填到 API Base URL，把 sk- 开头的内容填到 API Key。')
+  }
+
+  const baseURL = apiBaseURL || 'https://api.openai.com/v1'
+
+  try {
+    new URL(baseURL)
+  } catch {
+    throw new Error(`API Base URL 不是有效网址：${baseURL}`)
+  }
+
+  return createOpenAI({
+    baseURL: baseURL.replace(/\/+$/, ''),
+    apiKey
+  })
+}
+
 // Inject system prompt into the first user message to avoid
 // @ai-sdk/openai converting system -> developer for non-GPT models
 function mergeSystemIntoMessages(
@@ -44,10 +76,7 @@ function mergeSystemIntoMessages(
 }
 
 export function getSolutionStream(messages: ModelMessage[], abortSignal?: AbortSignal) {
-  const openai = createOpenAI({
-    baseURL: settings.apiBaseURL,
-    apiKey: settings.apiKey
-  })
+  const openai = getOpenAIClient()
 
   const systemPrompt =
     settings.customPrompt ||
@@ -69,10 +98,7 @@ export function getFollowUpStream(
   userQuestion: string,
   abortSignal?: AbortSignal
 ) {
-  const openai = createOpenAI({
-    baseURL: settings.apiBaseURL,
-    apiKey: settings.apiKey
-  })
+  const openai = getOpenAIClient()
 
   const updatedMessages: ModelMessage[] = [
     ...messages,
@@ -100,10 +126,7 @@ export function getFollowUpStream(
 }
 
 export function getGeneralStream(messages: ModelMessage[], abortSignal?: AbortSignal) {
-  const openai = createOpenAI({
-    baseURL: settings.apiBaseURL,
-    apiKey: settings.apiKey
-  })
+  const openai = getOpenAIClient()
 
   const systemPrompt =
     settings.customPrompt ||
@@ -125,10 +148,7 @@ export function getTranscriptionAnswerStream(
   transcriptionText: string,
   abortSignal?: AbortSignal
 ) {
-  const openai = createOpenAI({
-    baseURL: settings.apiBaseURL,
-    apiKey: settings.apiKey
-  })
+  const openai = getOpenAIClient()
 
   const systemPrompt =
     settings.customPrompt ||
