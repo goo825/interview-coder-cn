@@ -732,6 +732,11 @@ ipcMain.handle('stopSolutionStream', () => {
   return true
 })
 
+ipcMain.handle('answer-transcription', async () => {
+  await callbacks.answerTranscription()
+  return true
+})
+
 ipcMain.handle('sendFollowUpQuestion', async (_event, question: string) => {
   const mainWindow = global.mainWindow
   if (!mainWindow || mainWindow.isDestroyed() || !state.inCoderPage || !settings.apiKey) {

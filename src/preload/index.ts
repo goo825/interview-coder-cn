@@ -146,9 +146,11 @@ const api = {
   // Transcription
   startTranscription: (apiKey: string) => ipcRenderer.invoke('start-transcription', apiKey),
   stopTranscription: () => ipcRenderer.invoke('stop-transcription'),
+  answerTranscription: () => ipcRenderer.invoke('answer-transcription'),
   sendTranscriptionAudioChunk: (chunk: ArrayBuffer) =>
     ipcRenderer.send('transcription-audio-chunk', chunk),
   getTranscriptionText: () => ipcRenderer.invoke('get-transcription-text') as Promise<string>,
+  clearTranscriptionText: () => ipcRenderer.invoke('clear-transcription-text') as Promise<void>,
 
   onToggleTranscription: (callback: () => void) => {
     ipcRenderer.on('toggle-transcription', callback)

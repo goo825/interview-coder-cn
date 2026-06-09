@@ -2,12 +2,14 @@ import { create } from 'zustand'
 
 interface TranscriptionState {
   isTranscribing: boolean
+  isVoiceAnswerListening: boolean
   transcriptionText: string
   errorMessage: string | null
 }
 
 interface TranscriptionStore extends TranscriptionState {
   setIsTranscribing: (v: boolean) => void
+  setIsVoiceAnswerListening: (v: boolean) => void
   setTranscriptionText: (text: string) => void
   clearText: () => void
   setError: (msg: string | null) => void
@@ -16,6 +18,7 @@ interface TranscriptionStore extends TranscriptionState {
 
 const defaultState: TranscriptionState = {
   isTranscribing: false,
+  isVoiceAnswerListening: false,
   transcriptionText: '',
   errorMessage: null
 }
@@ -23,6 +26,7 @@ const defaultState: TranscriptionState = {
 export const useTranscriptionStore = create<TranscriptionStore>()((set) => ({
   ...defaultState,
   setIsTranscribing: (v) => set({ isTranscribing: v }),
+  setIsVoiceAnswerListening: (v) => set({ isVoiceAnswerListening: v }),
   setTranscriptionText: (text) => set({ transcriptionText: text }),
   clearText: () => set({ transcriptionText: '' }),
   setError: (msg) => set({ errorMessage: msg }),
